@@ -2,7 +2,6 @@ from django.db import models
 from rest_framework.exceptions import ValidationError
 
 from django.conf import settings
-from django.utils.text import slugify
 
 
 class Crew(models.Model):
@@ -28,7 +27,7 @@ class AirplaneType(models.Model):
 
 
 class Airplane(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     rows = models.IntegerField()
     seats_in_row = models.IntegerField()
     airplane_type = models.ForeignKey(AirplaneType,
@@ -88,6 +87,7 @@ class Flight(models.Model):
                                  )
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
+    crew = models.ManyToManyField(Crew, related_name="flights")
 
     class Meta:
         ordering = ["departure_time"]
