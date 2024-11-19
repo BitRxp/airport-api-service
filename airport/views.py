@@ -7,14 +7,14 @@ from airport.models import (
     Airport,
     AirplaneType,
     Crew,
-    Airplane,
+    Airplane, Route,
 )
 from airport.permissions import IsAdminOrIfAuthenticatedReadOnly
 
 from airport.serializers import (
     AirplaneTypeSerializer,
     CrewSerializer,
-    AirplaneSerializer,
+    AirplaneSerializer, AirportSerializer, RouteSerializer, RouteListSerializer,
 )
 
 
@@ -46,3 +46,29 @@ class AirplaneViewSet(
     queryset = Airplane.objects.all()
     serializer_class = AirplaneSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+
+class AirportViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+):
+    queryset = Airport.objects.all()
+    serializer_class = AirportSerializer
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+
+class RouteViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Route.objects.all().select_related("source", "destination")
+    serializer_class = RouteSerializer
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RouteListSerializer
+        return RouteSerializer
