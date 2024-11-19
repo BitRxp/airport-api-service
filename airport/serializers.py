@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from airport.models import (
     AirplaneType,
     Crew,
-    Airplane,
+    Airplane, Airport, Route,
 )
 
 
@@ -37,3 +37,35 @@ class AirplaneSerializer(serializers.ModelSerializer):
             "airplane_type",
             "capacity"
         )
+
+
+class AirportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Airport
+        fields = (
+            "name",
+            "closest_big_city"
+        )
+
+
+class RouteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Route
+        fields = (
+            "source",
+            "destination",
+            "distance"
+        )
+
+
+class RouteListSerializer(serializers.ModelSerializer):
+    source = serializers.SlugRelatedField(
+        read_only=True, slug_field="name"
+    )
+    destination = serializers.SlugRelatedField(
+        read_only=True, slug_field="name"
+    )
+
+    class Meta:
+        model = Route
+        fields = ("id", "source", "destination", "distance")
