@@ -1,20 +1,24 @@
+from datetime import datetime
+
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import viewsets, mixins
 from rest_framework.viewsets import GenericViewSet
 
+from django.db.models import F, Count
+
 from airport.models import (
     Airport,
     AirplaneType,
     Crew,
-    Airplane, Route,
+    Airplane, Route, Flight,
 )
 from airport.permissions import IsAdminOrIfAuthenticatedReadOnly
 
 from airport.serializers import (
     AirplaneTypeSerializer,
     CrewSerializer,
-    AirplaneSerializer, AirportSerializer, RouteSerializer, RouteListSerializer,
+    AirplaneSerializer, AirportSerializer, RouteSerializer, RouteListSerializer, FlightSerializer, FlightListSerializer,
 )
 
 
@@ -72,3 +76,44 @@ class RouteViewSet(
         if self.action == "list":
             return RouteListSerializer
         return RouteSerializer
+
+
+class FlightViewSet(viewsets.ModelViewSet):
+    queryset = (
+        Flight.objects.all()
+        .select_related(
+            "route",
+            "airplane",
+        )
+        .prefetch_related(
+            "crew"
+        )
+        .annotate(
+            tickets_available=(
+                F("airplane__rows") * F("airplane__seats_in_row")
+                - Count("ticket")
+            )
+        )
+    )
+    serializer_class = FlightSerializer
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_queryset(self):
+        date = self.request.query_params.get("date")
+        route_id_str = self.request.query_params.get("route")
+
+        queryset = self.queryset
+
+        if date:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+            queryset = queryset.filter(departure_time__date=date)
+
+        if route_id_str:
+            queryset = queryset.filter(route_id=int(route_id_str))
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return FlightListSerializer
+        return FlightSerializer
