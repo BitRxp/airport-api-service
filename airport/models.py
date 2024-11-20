@@ -64,6 +64,9 @@ class Route(models.Model):
                                     )
     distance = models.IntegerField()
 
+    def __str__(self):
+        return self.source.name + " - " + self.destination.name
+
 
 class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -95,6 +98,30 @@ class Flight(models.Model):
     def __str__(self):
         return f"{self.route.destination} - {self.departure_time}"
 
+    @staticmethod
+    def validate_flight_departure_location(
+            source,
+            previous_destination,
+            available_route_list,
+            error_to_raise
+    ):
+        if source != previous_destination:
+            if available_route_list:
+                raise error_to_raise(
+                    "Departure location should match the arrival location "
+                    "of the previous flight. "
+                    f"Available routes with the correct departure location: "
+                    f"{available_route_list}."
+                )
+            else:
+                raise error_to_raise(
+                    "Departure location should match the arrival location "
+                    "of the previous flight. "
+                    "There are no routes with the correct departure location. "
+                    "You need to create a route first, "
+                    "then schedule the flight."
+                )
+
 
 class Ticket(models.Model):
     row = models.IntegerField()
@@ -122,6 +149,22 @@ class Ticket(models.Model):
                                           f"(1, {count_attrs})"
                     }
                 )
+
+    @staticmethod
+    def validate_ticket_flight(
+            order_created_at,
+            flight_departure_time,
+            error_to_raise
+    ):
+        if order_created_at > flight_departure_time:
+            raise error_to_raise(
+                {
+                    "order": "Booking for past flights is not available. "
+                             f"Order created at {order_created_at} "
+                             f"but the flight departs at "
+                             f"{flight_departure_time}."
+                }
+            )
 
     def clean(self):
         Ticket.validate_ticket(
