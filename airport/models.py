@@ -1,5 +1,6 @@
 from django.db import models
 from rest_framework.exceptions import ValidationError
+from datetime import timedelta
 
 from django.conf import settings
 
@@ -64,8 +65,26 @@ class Route(models.Model):
                                     )
     distance = models.IntegerField()
 
+    @property
+    def full_route(self) -> str:
+        return f"{self.source.name} - {self.destination.name}"
+
+    @staticmethod
+    def validate_route(source, destination, error_to_raise):
+        if source == destination:
+            raise error_to_raise(
+                "Source and destination airports must be different."
+            )
+
+    def clean(self):
+        Route.validate_route(self.source, self.destination, ValidationError)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.source.name + " - " + self.destination.name
+        return self.full_route
 
 
 class Order(models.Model):
@@ -122,15 +141,64 @@ class Flight(models.Model):
                     "then schedule the flight."
                 )
 
+    @staticmethod
+    def validate_flight_time(
+            departure_time,
+            arrival_time,
+            previous_arrival_time,
+            error_to_raise
+    ):
+        if departure_time >= arrival_time:
+            raise error_to_raise(
+                "Departure time must be earlier than arrival time."
+            )
+
+        if previous_arrival_time:
+            if departure_time < previous_arrival_time:
+                next_possible_departure = (
+                        previous_arrival_time + timedelta(hours=3)
+                )
+                raise error_to_raise(
+                    f"Cannot schedule this flight "
+                    f"before the previous flight arrives. "
+                    f"The airplane's last scheduled flight "
+                    f"arrives at {previous_arrival_time}. "
+                    f"The next possible departure time is "
+                    f"{next_possible_departure}."
+                )
+            if departure_time < previous_arrival_time + timedelta(hours=3):
+                next_possible_departure = (
+                        previous_arrival_time + timedelta(hours=3)
+                )
+                raise error_to_raise(
+                    f"The airplane needs a 3-hour rest "
+                    f"after its previous flight. "
+                    f"The previous flight arrived at {previous_arrival_time}. "
+                    f"The next available departure time is "
+                    f"{next_possible_departure}."
+                )
+
+            time_difference = departure_time - previous_arrival_time
+            if time_difference > timedelta(hours=24):
+                raise error_to_raise(
+                    f"The time difference between consecutive flights "
+                    f"shouldn't exceed 24 hours. "
+                    f"Previous flight arrived at {previous_arrival_time}, "
+                    f"and this flight is scheduled to depart "
+                    f"at {departure_time}."
+                )
+
 
 class Ticket(models.Model):
     row = models.IntegerField()
     seat = models.IntegerField()
     flight = models.ForeignKey(Flight,
-                               on_delete=models.CASCADE
+                               on_delete=models.CASCADE,
+                               related_name="tickets"
                                )
     order = models.ForeignKey(Order,
-                              on_delete=models.CASCADE
+                              on_delete=models.CASCADE,
+                              related_name="tickets"
                               )
 
     @staticmethod
