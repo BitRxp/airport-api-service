@@ -5,7 +5,10 @@ from airport.views import (
     AirplaneTypeViewSet,
     CrewViewSet,
     AirplaneViewSet,
-    AirportViewSet, RouteViewSet, FlightViewSet, OrderViewSet,
+    AirportViewSet,
+    RouteViewSet,
+    FlightViewSet,
+    OrderViewSet,
 )
 
 router = routers.DefaultRouter()

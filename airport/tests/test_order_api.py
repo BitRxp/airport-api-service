@@ -8,7 +8,15 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from airport.models import Airport, Route, AirplaneType, Airplane, Flight, Order, Ticket
+from airport.models import (
+    Airport,
+    Route,
+    AirplaneType,
+    Airplane,
+    Flight,
+    Order,
+    Ticket
+)
 from airport.serializers import OrderListSerializer, OrderDetailSerializer
 
 ORDER_LIST_URL = reverse("airport:order-list")
@@ -16,9 +24,16 @@ ORDER_DETAIL_URL = reverse("airport:order-detail", kwargs={"pk": 1})
 
 
 def sample_flight(**params):
-    airport_source = Airport.objects.create(name="KRK", closest_big_city="Krakow")
-    airport_destination = Airport.objects.create(name="PMI", closest_big_city="Palma")
-    route = Route.objects.create(source=airport_source, destination=airport_destination, distance=1000)
+    airport_source = Airport.objects.create(
+        name="KRK",
+        closest_big_city="Krakow"
+    )
+    airport_destination = Airport.objects.create(
+        name="PMI",
+        closest_big_city="Palma")
+    route = Route.objects.create(
+        source=airport_source, destination=airport_destination, distance=1000
+    )
     airplane_type = AirplaneType.objects.create(name="Boeing")
     airplane = Airplane.objects.create(
         name="BO1234",
@@ -160,7 +175,9 @@ class AuthenticatedOrderAPITests(TestCase):
             self.client.post(ORDER_LIST_URL, data, format="json")
 
     def test_order_create_for_past_flights_forbidden(self):
-        flight = sample_flight(departure_time=timezone.now() - timedelta(days=1))
+        flight = sample_flight(
+            departure_time=timezone.now() - timedelta(days=1)
+        )
         ticket = {
             "row": 1,
             "seat": 1,
@@ -183,7 +200,10 @@ class AuthenticatedOrderAPITests(TestCase):
         )
 
         response = self.client.delete(ORDER_DETAIL_URL)
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
     def test_order_update_not_allowed(self):
         flight = sample_flight()
@@ -194,18 +214,13 @@ class AuthenticatedOrderAPITests(TestCase):
             flight=flight,
             order=order,
         )
-        data = {
-            "tickets": [
-                {
-                    "row": 1,
-                    "seat": 2,
-                    "flight": 1
-                }
-            ]
-        }
+        data = {"tickets": [{"row": 1, "seat": 2, "flight": 1}]}
 
         response = self.client.put(ORDER_DETAIL_URL, data=data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
     def test_order_partial_update_not_allowed(self):
         flight = sample_flight()
@@ -216,15 +231,14 @@ class AuthenticatedOrderAPITests(TestCase):
             flight=flight,
             order=order,
         )
-        data = {
-            "tickets": [
-                {
-                    "row": 1,
-                    "seat": 2,
-                    "flight": 1
-                }
-            ]
-        }
+        data = {"tickets": [{"row": 1, "seat": 2, "flight": 1}]}
 
-        response = self.client.patch(ORDER_DETAIL_URL, data=data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        response = self.client.patch(
+            ORDER_DETAIL_URL,
+            data=data,
+            format="json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )

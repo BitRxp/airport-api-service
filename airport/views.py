@@ -39,7 +39,7 @@ class AirportViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
     queryset = Airport.objects.all()
     serializer_class = AirportSerializer
@@ -60,7 +60,7 @@ class RouteViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
     queryset = Route.objects.select_related("source", "destination")
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -94,14 +94,14 @@ class RouteViewSet(
                 name="source",
                 description="Filter by departure airport id",
                 required=False,
-                type=str
+                type=str,
             ),
             OpenApiParameter(
                 name="destination",
                 description="Filter by destination airport id",
                 required=False,
-                type=str
-            )
+                type=str,
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -122,7 +122,7 @@ class AirplaneTypeViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
@@ -133,7 +133,7 @@ class AirplaneViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
     queryset = Airplane.objects.select_related("airplane_type")
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -150,16 +150,16 @@ class FlightViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
     queryset = (
-        Flight.objects
-        .select_related("route", "airplane")
+        Flight.objects.select_related("route", "airplane")
         .prefetch_related("crew")
         .order_by("departure_time", "arrival_time")
         .annotate(
             tickets_available=(
-                F("airplane__rows") * F("airplane__seats_in_row")
+                F("airplane__rows")
+                * F("airplane__seats_in_row")
                 - Count("tickets")
             )
         )
@@ -202,20 +202,20 @@ class FlightViewSet(
                 name="date",
                 description="Filter by departure date, ex. 2024-01-01",
                 required=False,
-                type=str
+                type=str,
             ),
             OpenApiParameter(
                 name="source",
                 description="Filter by departure airport id",
                 required=False,
-                type=str
+                type=str,
             ),
             OpenApiParameter(
                 name="destination",
                 description="Filter by destination airport id",
                 required=False,
-                type=str
-            )
+                type=str,
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -226,15 +226,12 @@ class OrderViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    GenericViewSet
+    GenericViewSet,
 ):
-    queryset = (
-        Order.objects
-        .prefetch_related(
-            "tickets__flight__route",
-            "tickets__flight__airplane",
-            "tickets__flight__crew"
-        )
+    queryset = Order.objects.prefetch_related(
+        "tickets__flight__route",
+        "tickets__flight__airplane",
+        "tickets__flight__crew"
     )
     pagination_class = StandardResultsSetPagination
     permission_classes = (IsAuthenticated,)
