@@ -10,7 +10,7 @@ from airport.views import (
 
 router = routers.DefaultRouter()
 router.register("airplane_types", AirplaneTypeViewSet)
-router.register("crews", CrewViewSet)
+router.register("crew", CrewViewSet)
 router.register("airplanes", AirplaneViewSet)
 router.register("airports", AirportViewSet)
 router.register("routes", RouteViewSet)
